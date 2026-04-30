@@ -9,22 +9,31 @@ const app = express();
 
 // --- 1. Middleware ---
 app.use(express.json());
-app.use(cors());
+
+// CORS Configuration: Netlify URL ko allow karne ke liye
+app.use(cors({
+    origin: "*", // Testing ke liye "*" sahi hai, production mein Netlify link daal dena
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true
+}));
 
 // --- 2. Database Connection ---
-mongoose.connect(process.env.MONGO_URI)
+const MONGO_URI = process.env.MONGO_URI;
+
+mongoose.connect(MONGO_URI)
   .then(() => console.log("MongoDB Atlas Connected ✅"))
   .catch(err => console.error("DB Error ❌:", err));
 
 // --- 3. Models ---
 
 // Message Schema
-const Message = mongoose.model('Message', new mongoose.Schema({
+const messageSchema = new mongoose.Schema({
   name: String,
   email: String,
   message: String,
   createdAt: { type: Date, default: Date.now }
-}));
+});
+const Message = mongoose.model('Message', messageSchema);
 
 // User Schema (Admin)
 const userSchema = new mongoose.Schema({
@@ -77,19 +86,19 @@ app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ msg: "User not found" });
+    if (!user) return res.status(400).json({ success: false, msg: "User not found" });
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ msg: "Invalid Credentials" });
+    if (!isMatch) return res.status(400).json({ success: false, msg: "Invalid Credentials" });
 
     const token = jwt.sign(
       { id: user._id, role: user.role }, 
-      process.env.JWT_SECRET || 'ZeeshanSecretKey', 
+      process.env.JWT_SECRET, 
       { expiresIn: '1d' }
     );
     res.json({ success: true, token, role: user.role });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -127,16 +136,17 @@ app.put('/api/messages/update/:id', authMiddleware, adminMiddleware, async (req,
   }
 });
 
-// [AUTH] Register Admin (Temporary use)
+// [AUTH] Register Admin (Once per use)
 app.post('/api/auth/register-admin', async (req, res) => {
     try {
         const { email, password } = req.body;
         const hashedPassword = await bcrypt.hash(password, 10);
         const newUser = new User({ email, password: hashedPassword, role: 'admin' });
         await newUser.save();
-        res.json({ msg: "Admin Created!" });
+        res.json({ success: true, msg: "Admin Created!" });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// --- 6. Port and Listener ---
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server on port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
