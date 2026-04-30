@@ -10,11 +10,25 @@ const app = express();
 // --- 1. Middleware ---
 app.use(express.json());
 
-// CORS Configuration: Netlify URL ko allow karne ke liye
+// Professional CORS Configuration for Production
+const allowedOrigins = [
+    "https://zeeshanchauhanportfolio.netlify.app", // Your Live Netlify Link
+    "http://localhost:5173"                       // For Local Testing
+];
+
 app.use(cors({
-    origin: "*", // Testing ke liye "*" sahi hai, production mein Netlify link daal dena
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) === -1) {
+            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
     methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
 // --- 2. Database Connection ---
