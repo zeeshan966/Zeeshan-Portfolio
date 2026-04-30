@@ -8,28 +8,32 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
+  // --- API Configuration ---
+  const BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://zeeshan-portfolio-1.onrender.com";
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
     
     try {
-      const res = await fetch("http://localhost:5000/api/auth/login", {
+      const res = await fetch(`${BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
 
-      if (data.success) {
+      if (res.ok && data.success) {
         localStorage.setItem("token", data.token);
         localStorage.setItem("role", data.role);
         navigate("/admin/messages");
       } else {
-        setError(data.msg || "Access Denied: Invalid Credentials ❌");
+        setError(data.msg || "Authentication Failed: Access Denied ❌");
       }
     } catch (err) {
-      setError("System Offline: Connection Failed 🔌");
+      console.error("Login Error:", err);
+      setError("Network Protocol Error: Server Unreachable 🔌");
     } finally {
       setIsLoading(false);
     }
@@ -51,10 +55,10 @@ export default function Login() {
           
           <div className="text-center mb-10">
             <div className="inline-block px-4 py-1.5 mb-4 rounded-full border border-yellow-500/20 bg-yellow-500/5">
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-yellow-500">Security Terminal</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-yellow-500">Secure Protocol</span>
             </div>
             <h2 className="text-5xl font-black text-white italic uppercase tracking-tighter leading-none">
-              Admin <br /> <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">Portal</span>
+              Admin <br /> <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">Access</span>
             </h2>
           </div>
 
@@ -62,10 +66,10 @@ export default function Login() {
             
             {/* Email Field */}
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">Authorized Email</label>
+              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">Administrative ID</label>
               <input 
                 type="email" 
-                placeholder="name@system.com" 
+                placeholder="admin@system.com" 
                 value={email} 
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-white/[0.03] border border-white/5 p-4 rounded-2xl text-white outline-none focus:border-yellow-500/50 focus:bg-white/[0.05] transition-all duration-300"
@@ -75,7 +79,7 @@ export default function Login() {
 
             {/* Password Field */}
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">Access Key</label>
+              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">Authorization Key</label>
               <input 
                 type="password" 
                 placeholder="••••••••" 
@@ -98,7 +102,7 @@ export default function Login() {
               className="group relative mt-4 overflow-hidden bg-yellow-500 py-4 rounded-2xl text-black font-black uppercase tracking-[0.2em] text-xs hover:shadow-[0_0_30px_rgba(234,179,8,0.4)] transition-all duration-500 disabled:opacity-50"
             >
               <span className="relative z-10 flex items-center justify-center gap-2">
-                {isLoading ? "Verifying..." : "Initialize Unlock"}
+                {isLoading ? "Authenticating..." : "Authorize Login"}
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
             </button>
@@ -106,7 +110,7 @@ export default function Login() {
           </form>
 
           <p className="mt-8 text-center text-zinc-600 text-[9px] font-bold uppercase tracking-[0.2em]">
-            Restricted Area • Authorized Personnel Only
+            Restricted Entry • System Monitoring Active
           </p>
 
         </div>

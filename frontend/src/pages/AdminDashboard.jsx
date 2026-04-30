@@ -9,9 +9,12 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
+  // --- API Configuration ---
+  const BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://zeeshan-portfolio-1.onrender.com";
+
   const fetchMessages = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/messages/all", {
+      const res = await fetch(`${BASE_URL}/api/messages/all`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -19,34 +22,41 @@ export default function AdminDashboard() {
         setMessages(data);
         setTimeout(() => setAnimate(true), 100);
       } else {
+        // Redirect to login if session is invalid
         navigate("/login");
       }
     } catch (err) {
-      console.error("Dashboard Error:", err);
+      console.error("Data Fetch Error:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchMessages(); }, [navigate]);
+  useEffect(() => { 
+    if (!token) {
+      navigate("/login");
+    } else {
+      fetchMessages(); 
+    }
+  }, [navigate, token]);
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Bhai, pakka delete karna hai? Ye wapas nahi aayega! 💀")) return;
+    if (!window.confirm("Are you sure you want to permanently delete this record? This action cannot be undone.")) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/messages/delete/${id}`, {
+      const res = await fetch(`${BASE_URL}/api/messages/delete/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
         setMessages(messages.filter((m) => m._id !== id));
       }
-    } catch (err) { console.error(err); }
+    } catch (err) { console.error("Deletion Error:", err); }
   };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(`http://localhost:5000/api/messages/update/${editingMsg._id}`, {
+      const res = await fetch(`${BASE_URL}/api/messages/update/${editingMsg._id}`, {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",
@@ -58,7 +68,7 @@ export default function AdminDashboard() {
         setEditingMsg(null);
         fetchMessages();
       }
-    } catch (err) { console.error(err); }
+    } catch (err) { console.error("Update Error:", err); }
   };
 
   const handleLogout = () => {
@@ -70,7 +80,7 @@ export default function AdminDashboard() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#050505]">
         <div className="w-14 h-14 border-4 border-yellow-500/10 border-t-yellow-500 rounded-2xl animate-spin mb-6"></div>
-        <p className="text-yellow-500 font-black uppercase tracking-[0.4em] text-[10px] animate-pulse">Decrypting Database...</p>
+        <p className="text-yellow-500 font-black uppercase tracking-[0.4em] text-[10px] animate-pulse">Establishing Secure Connection...</p>
       </div>
     );
   }
@@ -84,27 +94,27 @@ export default function AdminDashboard() {
           <div className="space-y-3 text-center md:text-left w-full md:w-auto">
             <div className="flex items-center justify-center md:justify-start gap-3">
               <span className="w-10 h-[2px] bg-yellow-500"></span>
-              <p className="text-yellow-500 font-black tracking-[0.4em] text-[10px] uppercase">Control Center</p>
+              <p className="text-yellow-500 font-black tracking-[0.4em] text-[10px] uppercase">Administrative Portal</p>
             </div>
             <h1 className="text-5xl md:text-8xl font-black italic uppercase tracking-tighter text-white leading-[0.85]">
-              Master <br /> <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">Logs</span>
+              System <br /> <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">Archive</span>
             </h1>
           </div>
-          <button onClick={handleLogout} className="w-full md:w-auto px-8 py-4 bg-white text-black rounded-2xl font-black uppercase text-[11px] tracking-widest active:scale-95 shadow-xl">
-            Logout Session
+          <button onClick={handleLogout} className="w-full md:w-auto px-8 py-4 bg-white text-black rounded-2xl font-black uppercase text-[11px] tracking-widest active:scale-95 shadow-xl hover:bg-yellow-500 transition-colors">
+            Terminate Session
           </button>
         </div>
 
         {/* --- Messages Grid OR Empty State --- */}
         {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 px-6 bg-white/[0.02] border border-dashed border-white/10 rounded-[3rem] animate-pulse">
+          <div className="flex flex-col items-center justify-center py-20 px-6 bg-white/[0.02] border border-dashed border-white/10 rounded-[3rem]">
             <div className="w-20 h-20 mb-6 bg-yellow-500/10 rounded-full flex items-center justify-center border border-yellow-500/20">
                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                </svg>
             </div>
-            <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter mb-2 text-center">Zero Logs Detected</h2>
-            <p className="text-zinc-500 text-xs font-bold uppercase tracking-[0.3em] text-center">System is currently clear. No incoming transmissions.</p>
+            <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter mb-2 text-center">No Records Found</h2>
+            <p className="text-zinc-500 text-xs font-bold uppercase tracking-[0.3em] text-center">The database is currently empty. No transmissions received.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
@@ -122,7 +132,7 @@ export default function AdminDashboard() {
                   <div className="flex justify-between items-start mb-6">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-yellow-500 rounded-xl flex items-center justify-center text-black font-black text-lg">
-                        {msg.name[0].toUpperCase()}
+                        {msg.name ? msg.name[0].toUpperCase() : "U"}
                       </div>
                       <div>
                         <h3 className="text-white font-black uppercase text-base tracking-tighter">{msg.name}</h3>
@@ -145,11 +155,12 @@ export default function AdminDashboard() {
                   </div>
 
                   <div className="bg-white/[0.02] p-6 rounded-2xl border border-white/5 mb-6 flex-grow">
-                    <p className="text-zinc-400 text-sm italic font-medium">"{msg.message}"</p>
+                    <p className="text-zinc-400 text-sm italic font-medium leading-relaxed">"{msg.message}"</p>
                   </div>
 
-                  <div className="text-[9px] font-black text-zinc-700 uppercase tracking-widest">
-                    Log Date: {new Date(msg.createdAt).toLocaleDateString()}
+                  <div className="text-[9px] font-black text-zinc-700 uppercase tracking-widest flex justify-between">
+                    <span>Entry ID: {msg._id.slice(-6)}</span>
+                    <span>Timestamp: {new Date(msg.createdAt).toLocaleString()}</span>
                   </div>
                 </div>
               </div>
@@ -162,7 +173,7 @@ export default function AdminDashboard() {
       {editingMsg && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/90 backdrop-blur-md">
           <div className="bg-[#0f0f11] w-full max-w-lg p-8 rounded-[3rem] border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
-            <h2 className="text-2xl font-black uppercase italic mb-6 text-yellow-500">Modify Record</h2>
+            <h2 className="text-2xl font-black uppercase italic mb-6 text-yellow-500">Edit Data Point</h2>
             <form onSubmit={handleUpdate} className="space-y-4">
               <input 
                 className="w-full bg-white/5 p-4 rounded-xl outline-none border border-white/10 focus:border-yellow-500 text-white font-bold"
@@ -175,8 +186,8 @@ export default function AdminDashboard() {
                 onChange={(e) => setEditingMsg({...editingMsg, message: e.target.value})}
               />
               <div className="flex gap-4 pt-4">
-                <button type="submit" className="flex-1 bg-yellow-500 text-black py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest active:scale-95 transition-all">Update Core</button>
-                <button type="button" onClick={() => setEditingMsg(null)} className="flex-1 bg-white/5 text-white py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest active:scale-95">Abort</button>
+                <button type="submit" className="flex-1 bg-yellow-500 text-black py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest active:scale-95 transition-all">Commit Changes</button>
+                <button type="button" onClick={() => setEditingMsg(null)} className="flex-1 bg-white/5 text-white py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest active:scale-95">Cancel</button>
               </div>
             </form>
           </div>
